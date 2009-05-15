@@ -1,6 +1,7 @@
 // identica badge -- updated to work with the native API, 12-4-2008
 // copyright Kent Brewster 2008
 // see http://kentbrewster.com/identica-badge for info
+// Adapted to only show own status notices by Remko Tronçon
 ( function() { 
    var trueName = '';
    for (var i = 0; i < 16; i++) { 
@@ -75,12 +76,12 @@
             }
             var s = document.styleSheets[document.styleSheets.length - 1];
             var rules = {
-               "" : "{zoom:1;margin:0;padding:0;width:" + $.a.width + "px;background:" + $.a.background + ";border:" + $.a.border + ";font:13px/1.2em tahoma, veranda, arial, helvetica, clean, sans-serif;*font-size:small;*font:x-small;}",
+               "" : "{zoom:1;margin:0;padding:0;width:" + $.a.width + "px;background:" + $.a.background + ";border:" + $.a.border + ";font:11px/1.2em tahoma, veranda, arial, helvetica, clean, sans-serif;*font-size:small;*font:x-small;}",
                "a" : "{cursor:pointer;text-decoration:none;}",
                "a:hover" : "{text-decoration:underline;}",
                "cite" : "{font-weight:bold;margin:0 0 0 4px;padding:0;display:block;font-style:normal;line-height:" + ($.a.thumbnailSize/2) + "px;}",
                "cite a" : "{color:#C15D42;}",
-               "date":"{font-size:87%;margin:0 0 0 4px;padding:0;display:block;font-style:normal;line-height:" + ($.a.thumbnailSize/2) + "px;}",
+               "date":"{font-size:80%;margin:0 0 0 0;text-align:right;padding:0;display:block;font-style:normal;line-height:" + ($.a.thumbnailSize/2) + "px;}",
                "date:after" : "{clear:both; content:\".\"; display:block; height:0; visibility:hidden; }",
                "date a" : "{color:#676;}",
                "h3" : "{margin:0;padding:" + $.a.padding + "px;font-weight:bold;background:" + $.a.headerBackground + " url('http://" + $.a.server + "/favicon.ico') " + $.a.padding + "px 50% no-repeat;text-indent:" + ($.a.padding + 16) + "px;}",
@@ -124,11 +125,11 @@
             $.s.r = document.createElement('UL');
             $.s.appendChild($.s.r);
             $.s.f = document.createElement('H4');
-            var a = document.createElement('A');
+            /*var a = document.createElement('A');
             a.innerHTML = 'get this';
             a.target = '_blank';
             a.href = 'http://kentbrewster.com/identica-badge';
-            $.s.f.appendChild(a);
+            $.s.f.appendChild(a);*/
             $.s.appendChild($.s.f);
             $.f.getUser();
          },
@@ -150,7 +151,7 @@
          },
          changeUserTo : function(el) {
             $.a.user = el.rel;
-            $.s.h.a.innerHTML = el.rev + $.a.headerText;
+            $.s.h.a.innerHTML = $.a.headerText;
             $.s.h.a.href = 'http://' + $.a.server + '/' + el.id;
             $.f.runSearch(); 
          },
@@ -165,72 +166,21 @@
                $.f.removeScript(id);
                $.f.renderResult(r); 
             };
-            var url = 'http://' + $.a.server + '/api/statuses/friends/' + $.a.user + '.json?callback=' + id;
+            //var url = 'http://' + $.a.server + '/api/statuses/friends/' + $.a.user + '.json?callback=' + id;
+            var url = 'http://' + $.a.server + '/api/statuses/user_timeline/' + $.a.user + '.json?callback=' + id;
             $.f.runScript(url, id);
          },
          renderResult: function(r) { 
-            for (var i = 0; i < r.length; i++) {
-               if (!r[i].status) {
-                  r.splice(i, 1);
-               } else {
-                  r[i].status_id = parseInt(r[i].status.id);
-               }
-            }
-            r = $.f.sortArray(r, "status_id", true);
+            r = $.f.sortArray(r, "id", true);
             $.s.h.className = '';
             for (var i = 0; i < r.length; i++) {
+							 if (!r[i] || !r[i].user) {
+								 continue;
+							 }
                var li = document.createElement('LI');
-               var icon = document.createElement('A');
-               if (r[i] && r[i].url) {
-                  icon.href = r[i].url;
-                  icon.target = '_laconica'; 
-                  icon.title = 'Visit ' + r[i].screen_name + ' at ' + r[i].url;
-               } else {
-                  icon.href = 'http://' + $.a.server + '/' + r[i].screen_name;
-                  icon.target = '_laconica'; 
-                  icon.title = 'Visit ' + r[i].screen_name + ' at http://' + $.a.server + '/' + r[i].screen_name;
-               }
-
-               var img = document.createElement('IMG');
-               img.src = r[i].profile_image_url;
-               icon.appendChild(img);
-               li.appendChild(icon); 
-               
-               var user = document.createElement('CITE');
-               var a = document.createElement('A');
-               a.rel = r[i].id;
-               a.rev = r[i].name;
-               a.id = r[i].screen_name;
-               a.innerHTML = r[i].name; 
-               a.href = 'http://' + $.a.server + '/' + r[i].screen_name;
-               a.onclick = function() {
-                  $.f.changeUserTo(this);
-                  return false;
-               };
-               user.appendChild(a);
-               li.appendChild(user);
-               var updated = document.createElement('DATE');
-               if (r[i].status && r[i].status.created_at) {
-                  var date_link = document.createElement('A');
-                  date_link.innerHTML = r[i].status.created_at.split(/\+/)[0];
-                  date_link.href = 'http://' + $.a.server + '/notice/' + r[i].status.id;
-                  date_link.target = '_laconica';
-                  updated.appendChild(date_link);
-                  if (r[i].status.in_reply_to_status_id) {
-                     updated.appendChild(document.createTextNode(' in reply to '));
-                     var in_reply_to = document.createElement('A');
-                     in_reply_to.innerHTML = r[i].status.in_reply_to_status_id;
-                     in_reply_to.href = 'http://' + $.a.server + '/notice/' + r[i].status.in_reply_to_status_id;
-                     in_reply_to.target = '_laconica';
-                     updated.appendChild(in_reply_to);
-                  }
-               } else {
-                  updated.innerHTML = 'has not updated yet';
-               }
-               li.appendChild(updated);
                var p = document.createElement('P');
-               if (r[i].status && r[i].status.text) {
-                  var raw = r[i].status.text;
+               if (r[i].text) {
+                  var raw = r[i].text;
                   var cooked = raw;
                   cooked = cooked.replace(/http:\/\/([^ ]+)/g, "<a href=\"http://$1\" target=\"_laconica\">http://$1</a>");
                   cooked = cooked.replace(/@([\w*]+)/g, '@<a href="http://' + $.a.server + '/$1" target=\"_laconica\">$1</a>');
@@ -238,18 +188,25 @@
                   p.innerHTML = cooked;
                }
                li.appendChild(p);
-               var a = p.getElementsByTagName('A');
-               for (var j = 0; j < a.length; j++) {
-                  if (a[j].className == 'changeUserTo') {
-                     a[j].className = '';
-                     a[j].href = 'http://' + $.a.server + '/' + a[j].innerHTML;
-                     a[j].rel = a[j].innerHTML;
-                     a[j].onclick = function() { 
-                        $.f.changeUserTo(this); 
-                        return false;
-                     } 
+               var updated = document.createElement('DATE');
+               if (r[i].created_at) {
+                  var date_link = document.createElement('A');
+                  date_link.innerHTML = r[i].created_at.split(/\+/)[0];
+                  date_link.href = 'http://' + $.a.server + '/notice/' + r[i].id;
+                  date_link.target = '_laconica';
+                  updated.appendChild(date_link);
+                  if (r[i].in_reply_to_status_id) {
+                     updated.appendChild(document.createTextNode(' in reply to '));
+                     var in_reply_to = document.createElement('A');
+                     in_reply_to.innerHTML = r[i].in_reply_to_status_id;
+                     in_reply_to.href = 'http://' + $.a.server + '/notice/' + r[i].in_reply_to_status_id;
+                     in_reply_to.target = '_laconica';
+                     updated.appendChild(in_reply_to);
                   }
+               } else {
+                  updated.innerHTML = 'has not updated yet';
                }
+               li.appendChild(updated);
                $.s.r.appendChild(li);
             }         
          },
