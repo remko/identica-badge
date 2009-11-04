@@ -174,9 +174,12 @@
             r = $.f.sortArray(r, "id", true);
             $.s.h.className = '';
             for (var i = 0; i < r.length; i++) {
-							 if (!r[i] || !r[i].user) {
-								 continue;
-							 }
+               if (!r[i] || !r[i].user) {
+                 continue;
+               }
+               if (r[i].text && r[i].text[0] == "@") {
+                 continue;
+               }
                var li = document.createElement('LI');
                var p = document.createElement('P');
                if (r[i].text) {
