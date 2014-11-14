@@ -1,4 +1,4 @@
-# [Adaptation of Kent Brewster's Identi.ca Badge](http://el-tramo.be/software/identica-badge)
+# [Adaptation of Kent Brewster's Identi.ca Badge](https://el-tramo.be/identica-badge)
 
 ## About
 
